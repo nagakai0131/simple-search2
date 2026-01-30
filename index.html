@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>条件検索</title>
+  <style>
+    :root{
+      --bg:#F5F6F8; --card:#FFF; --border:#E3E6EA;
+      --accent:#2F6FED; --text:#111; --sub:#667085;
+      --input:#EEF3FF;
+    }
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+      background:var(--bg); color:var(--text);
+    }
+    header{
+      background:var(--accent); color:#fff; padding:18px 16px 14px;
+      font-size:18px; font-weight:700;
+    }
+    .wrap{ max-width:420px; margin:0 auto; padding:14px 14px 26px; }
+    .card{
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:12px; margin:12px 0;
+      box-shadow:0 1px 0 rgba(16,24,40,.04);
+    }
+    .label{ font-size:12px; color:var(--sub); margin:2px 0 8px; font-weight:700; }
+    select{
+      width:100%; font-size:16px; padding:12px 12px;
+      border-radius:12px; border:1px solid var(--border);
+      background:var(--input);
+      appearance:auto;
+    }
+    .result{
+      font-size:28px; font-weight:800; text-align:center;
+      padding:14px 8px;
+    }
+    .hint{ font-size:12px; color:var(--sub); margin-top:6px; }
+    .row{ display:flex; gap:10px; }
+    .row > .card{ flex:1; margin:12px 0; }
+    button{
+      width:100%; padding:12px 14px; font-size:16px; font-weight:700;
+      border-radius:12px; border:1px solid var(--border); background:#fff;
+    }
+  </style>
+</head>
+<body>
+  <header>条件検索</header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="label">条件1</div>
+      <select id="cond1">
+        <option value="">選択してください</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="label">条件2</div>
+      <select id="cond2" disabled>
+        <option value="">まず条件1を選択</option>
+      </select>
+      <div class="hint">条件1に連動して候補を絞れます（必要なら絞り込みルール変更可）</div>
+    </div>
+
+    <div class="card">
+      <div class="label">結果</div>
+      <div class="result" id="result">—</div>
+      <div class="hint" id="hint">条件を選ぶと結果が表示されます</div>
+    </div>
+
+    <button id="clear">クリア</button>
+  </div>
+
+<script>
+/*
+  データ定義：
+  cond1: "A"|"B"|"C"
+  cond2: "Aa".."Cc"
+  result: "Aaa" など
+
+  ルール：
+  - このサンプルは (cond1, cond2) の組み合わせがあれば結果を表示
+*/
+const data = [
+  // A
+  {cond1:"A", cond2:"Aa", result:"Aaa"},
+  {cond1:"A", cond2:"Ab", result:"Aab"},
+  {cond1:"A", cond2:"Ac", result:"Aac"},
+  {cond1:"A", cond2:"Ba", result:"Aba"},
+  {cond1:"A", cond2:"Bb", result:"Abb"},
+  {cond1:"A", cond2:"Bc", result:"Abc"},
+  {cond1:"A", cond2:"Ca", result:"Aca"},
+  {cond1:"A", cond2:"Cb", result:"Acb"},
+  {cond1:"A", cond2:"Cc", result:"Acc"},
+  // B
+  {cond1:"B", cond2:"Aa", result:"Baa"},
+  {cond1:"B", cond2:"Ab", result:"Bab"},
+  {cond1:"B", cond2:"Ac", result:"Bac"},
+  {cond1:"B", cond2:"Ba", result:"Bba"},
+  {cond1:"B", cond2:"Bb", result:"Bbb"},
+  {cond1:"B", cond2:"Bc", result:"Bbc"},
+  {cond1:"B", cond2:"Ca", result:"Bca"},
+  {cond1:"B", cond2:"Cb", result:"Bcb"},
+  {cond1:"B", cond2:"Cc", result:"Bcc"},
+  // C
+  {cond1:"C", cond2:"Aa", result:"Caa"},
+  {cond1:"C", cond2:"Ab", result:"Cab"},
+  {cond1:"C", cond2:"Ac", result:"Cac"},
+  {cond1:"C", cond2:"Ba", result:"Cba"},
+  {cond1:"C", cond2:"Bb", result:"Cbb"},
+  {cond1:"C", cond2:"Bc", result:"Cbc"},
+  {cond1:"C", cond2:"Ca", result:"Cca"},
+  {cond1:"C", cond2:"Cb", result:"Ccb"},
+  {cond1:"C", cond2:"Cc", result:"Ccc"},
+];
+
+// cond1候補
+const cond1List = [...new Set(data.map(d=>d.cond1))].sort();
+
+// cond2候補（cond1連動）
+function cond2ListBy(cond1){
+  return [...new Set(data.filter(d=>d.cond1===cond1).map(d=>d.cond2))].sort();
+}
+
+function findResult(cond1, cond2){
+  const hit = data.find(d=>d.cond1===cond1 && d.cond2===cond2);
+  return hit ? hit.result : null;
+}
+
+const el1 = document.getElementById("cond1");
+const el2 = document.getElementById("cond2");
+const out = document.getElementById("result");
+const hint = document.getElementById("hint");
+
+function setResult(){
+  const c1 = el1.value;
+  const c2 = el2.value;
+  if(!c1 || !c2){
+    out.textContent = "—";
+    hint.textContent = "条件を選ぶと結果が表示されます";
+    return;
+  }
+  const r = findResult(c1, c2);
+  if(r){
+    out.textContent = r;
+    hint.textContent = "";
+  }else{
+    out.textContent = "該当なし";
+    hint.textContent = "対応表に存在しない組み合わせです";
+  }
+}
+
+function rebuildCond2(){
+  const c1 = el1.value;
+  el2.innerHTML = "";
+  if(!c1){
+    el2.disabled = true;
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "まず条件1を選択";
+    el2.appendChild(opt);
+    return;
+  }
+  el2.disabled = false;
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = "選択してください";
+  el2.appendChild(first);
+
+  for(const c2 of cond2ListBy(c1)){
+    const opt = document.createElement("option");
+    opt.value = c2;
+    opt.textContent = c2;
+    el2.appendChild(opt);
+  }
+}
+
+(function init(){
+  for(const c1 of cond1List){
+    const opt = document.createElement("option");
+    opt.value = c1;
+    opt.textContent = c1;
+    el1.appendChild(opt);
+  }
+  rebuildCond2();
+  setResult();
+})();
+
+el1.addEventListener("change", () => {
+  rebuildCond2();
+  el2.value = "";
+  setResult();
+});
+el2.addEventListener("change", setResult);
+
+document.getElementById("clear").addEventListener("click", () => {
+  el1.value = "";
+  rebuildCond2();
+  el2.value = "";
+  setResult();
+});
+</script>
+</body>
+</html>
