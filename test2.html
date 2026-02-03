@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drive img test</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+    img{max-width:100%;border:1px solid #ccc;border-radius:12px}
+    code{word-break:break-all;background:#f3f3f3;padding:2px 6px;border-radius:8px}
+  </style>
+</head>
+<body>
+  <h1>Google Drive 画像テスト</h1>
+
+  <p>方式1：<code id="u1"></code></p>
+  <img id="img1" alt="img1">
+  <p id="s1"></p>
+
+  <p>方式2：<code id="u2"></code></p>
+  <img id="img2" alt="img2">
+  <p id="s2"></p>
+
+<script>
+  const fileId = "1u8Q7gtk72qWWeTVQyIFyw7z6WzVF1Awf";
+  const u1 = `https://drive.google.com/uc?id=${fileId}`;
+  const u2 = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  document.getElementById("u1").textContent = u1;
+  document.getElementById("u2").textContent = u2;
+
+  const img1 = document.getElementById("img1");
+  const img2 = document.getElementById("img2");
+
+  img1.onload = () => document.getElementById("s1").textContent = "方式1：成功";
+  img1.onerror = () => document.getElementById("s1").textContent = "方式1：失敗（Driveの埋め込み制限 or 共有設定）";
+  img1.src = u1;
+
+  img2.onload = () => document.getElementById("s2").textContent = "方式2：成功";
+  img2.onerror = () => document.getElementById("s2").textContent = "方式2：失敗（Driveの埋め込み制限 or 共有設定）";
+  img2.src = u2;
+</script>
+</body>
+</html>
